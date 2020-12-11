@@ -1,7 +1,7 @@
 ## Description
 The new Nordic Semiconductor's [Power Profiler Kit II (PPK 2)](https://www.nordicsemi.com/Software-and-tools/Development-Tools/Power-Profiler-Kit-2) is very useful for real time measurement of device power consumption. The official [nRF Connect Power Profiler tool](https://github.com/NordicSemiconductor/pc-nrfconnect-ppk) provides a friendly GUI with real-time data display. However there is no support for automated power monitoring. The puropose of this Python API is to enable automated power monitoring and data logging in Python applications.
 
-![Power Profiler Kit II](https://github.com/IRNAS/ppk2-api-python/blob/main/images/power-profiler-kit-II.jpg)
+![Power Profiler Kit II](https://github.com/IRNAS/ppk2-api-python/blob/master/images/power-profiler-kit-II.jpg)
 
 ## Features
 The main features of the PPK2 Python API (will) include:
