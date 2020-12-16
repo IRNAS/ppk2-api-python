@@ -127,20 +127,28 @@ class PPK2_API():
             read = self.ser.read(self.ser.in_waiting)
             time.sleep(0.1)
 
+            # TODO add a read_until serial read function with a timeout
             if read != b'' and "END" in read.decode("utf-8"):
                 return read.decode("utf-8")
 
     def _parse_metadata(self, metadata):
         """Parse metadata and store it to modifiers"""
-        data_split = [row.split(": ") for row in metadata.split("\n")]
+        # TODO handle more robustly
+        try:
+            data_split = [row.split(": ") for row in metadata.split("\n")]
 
-        for key in self.modifiers.keys():
-            for data_pair in data_split:
-                if key == data_pair[0]:
-                    self.modifiers[key] = data_pair[1]
-                for ind in range(0, 5):
-                    if key+str(ind) == data_pair[0]:
-                        self.modifiers[key][str(ind)] = float(data_pair[1])
+            for key in self.modifiers.keys():
+                for data_pair in data_split:
+                    if key == data_pair[0]:
+                        self.modifiers[key] = data_pair[1]
+                    for ind in range(0, 5):
+                        if key+str(ind) == data_pair[0]:
+                            self.modifiers[key][str(ind)] = float(data_pair[1])
+
+            return True
+        except Exception as e:
+            # if exception triggers serial port is probably not correct
+            return None
 
     def _generate_mask(self, bits, pos):
         pos = pos
@@ -172,7 +180,8 @@ class PPK2_API():
         """Gets and sets modifiers from device memory"""
         self._write_serial((PPK2_Command.GET_META_DATA, ))
         metadata = self._read_metadata()
-        self._parse_metadata(metadata)
+        ret = self._parse_metadata(metadata)
+        return ret
 
     def start_measuring(self):
         """Start continous measurement"""
