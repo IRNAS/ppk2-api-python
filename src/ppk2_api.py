@@ -155,7 +155,7 @@ class PPK2_API():
     def _handle_raw_data(self, adc_value):
         """Convert raw value to analog value"""
         current_measurement_range = min(self._get_masked_value(
-            adc_value, self.MEAS_RANGE), 5)  # 5 is the number of parameters
+            adc_value, self.MEAS_RANGE), 4)  # 5 is the number of parameters
         adc_result = self._get_masked_value(adc_value, self.MEAS_ADC) * 4
         bits = self._get_masked_value(adc_value, self.MEAS_LOGIC)
         analog_value = self.get_adc_result(
@@ -234,22 +234,22 @@ class PPK2_API():
         """Convert discrete value to analog value"""
         return int.from_bytes(adc_value, byteorder="little", signed=False)  # convert reading to analog value
 
-    def average_of_sampling_period(self, buf):
+    def get_samples(self, buf):
         """
-        Calculates the average value of one sampling period.
+        Returns list of samples read in one sampling period.
         The number of sampled values depends on the delay between serial reads.
+        Manipulation of samples is left to the user.
         See example for more info.
         """
 
         sample_size = 4  # one analog value is 4 bytes in size
         offset = self.remainder["len"]
-        measurement_avg = 0
-        num_samples = 0
+        samples = []
 
         first_reading = (self.remainder["sequence"] + buf[0:sample_size-offset])[:4]
         adc_val = self._digital_to_analog(first_reading)
-        measurement_avg += self._handle_raw_data(adc_val)
-        num_samples += 1
+        measurement = self._handle_raw_data(adc_val)
+        samples.append(measurement)
 
         offset = sample_size - offset
 
@@ -257,14 +257,10 @@ class PPK2_API():
             next_val = buf[offset:offset + sample_size]
             offset += sample_size
             adc_val = self._digital_to_analog(next_val)
-
-            measurement_avg += self._handle_raw_data(adc_val)
-            num_samples += 1
-
-        print("Avg of {} samples: {} μA".format(
-            num_samples, measurement_avg/num_samples))
+            measurement = self._handle_raw_data(adc_val)
+            samples.append(measurement)
 
         self.remainder["sequence"] = buf[offset:len(buf)]
         self.remainder["len"] = len(buf)-offset
 
-        return measurement_avg/num_samples
+        return samples  # return list of samples, handle those lists in PPK2 API wrapper
