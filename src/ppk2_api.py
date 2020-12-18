@@ -171,6 +171,13 @@ class PPK2_API():
 
         return analog_value
 
+    @staticmethod
+    def list_devices():
+        import serial.tools.list_ports
+        ports = serial.tools.list_ports.comports()
+        devices = [port.device for port in ports if port.product == 'PPK2']
+        return devices
+
     def get_data(self):
         """Return readings of one sampling period"""
         sampling_data = self.ser.read(self.ser.in_waiting)

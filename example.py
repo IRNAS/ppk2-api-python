@@ -9,7 +9,15 @@ The basic ampere mode sequence is:
 import time
 from src.ppk2_api import PPK2_API
 
-ppk2_test = PPK2_API("/dev/ttyACM0")
+ppk2s_connected = PPK2_API.list_devices()
+if(len(ppk2s_connected) == 1):
+    ppk2_port = ppk2s_connected[0]
+    print(f'Found PPK2 at {ppk2_port}')
+else:
+    print(f'Too many connected PPK2\'s: {ppk2s_connected}')
+    exit()
+
+ppk2_test = PPK2_API(ppk2_port)
 ppk2_test.get_modifiers()
 ppk2_test.use_ampere_meter()  # set ampere meter mode
 ppk2_test.toggle_DUT_power("OFF")  # disable DUT power
