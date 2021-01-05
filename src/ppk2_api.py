@@ -79,6 +79,10 @@ class PPK2_API():
         # adc measurement buffer remainder and len of remainder
         self.remainder = {"sequence": b'', "len": 0}
 
+    def __del__(self):
+        """Destructor"""
+        self.ser.close()
+
     def _pack_struct(self, cmd_tuple):
         """Returns packed struct"""
         return struct.pack("B" * len(cmd_tuple), *cmd_tuple)
@@ -236,7 +240,7 @@ class PPK2_API():
             result_without_gain *
             (self.modifiers["GS"][current_range] *
              result_without_gain + self.modifiers["GI"][current_range])
-             # this part is used only in source meter mode
+             # this part is currently not used
             + (self.modifiers["S"][current_range] + 
                (self.current_vdd / 1000) + self.modifiers["I"][current_range])
         )
