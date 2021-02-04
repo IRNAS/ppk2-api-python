@@ -35,10 +35,12 @@ class PPK2_Command():
     RESET = 0x20
     SET_USER_GAINS = 0x25
 
+
 class PPK2_Modes():
     """PPK2 measurement modes"""
     AMPERE_MODE = "AMPERE_MODE"
     SOURCE_MODE = "SOURCE_MODE"
+
 
 class PPK2_API():
     def __init__(self, port):
@@ -48,13 +50,13 @@ class PPK2_API():
 
         self.modifiers = {
             "Calibrated": None,
-            "R": {"0": None, "1": None, "2": None, "3": None, "4": None},
-            "GS": {"0": None, "1": None, "2": None, "3": None, "4": None},
-            "GI": {"0": None, "1": None, "2": None, "3": None, "4": None},
-            "O": {"0": None, "1": None, "2": None, "3": None, "4": None},
-            "S": {"0": None, "1": None, "2": None, "3": None, "4": None},
-            "I": {"0": None, "1": None, "2": None, "3": None, "4": None},
-            "UG": {"0": None, "1": None, "2": None, "3": None, "4": None},
+            "R": {"0": 1031.64, "1": 101.65, "2": 10.15, "3": 0.94, "4": 0.043},
+            "GS": {"0": 1, "1": 1, "2": 1, "3": 1, "4": 1},
+            "GI": {"0": 1, "1": 1, "2": 1, "3": 1, "4": 1},
+            "O": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0},
+            "S": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0},
+            "I": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0},
+            "UG": {"0": 1, "1": 1, "2": 1, "3": 1, "4": 1},
             "HW": None,
             "IA": None
         }
@@ -69,10 +71,6 @@ class PPK2_API():
         self.MEAS_ADC = self._generate_mask(14, 0)
         self.MEAS_RANGE = self._generate_mask(3, 14)
         self.MEAS_LOGIC = self._generate_mask(8, 24)
-
-        self.prev_rolling_avg = None
-        self.prev_rolling_avg4 = None
-        self.prev_range = None
 
         self.mode = None
 
@@ -147,7 +145,14 @@ class PPK2_API():
                         self.modifiers[key] = data_pair[1]
                     for ind in range(0, 5):
                         if key+str(ind) == data_pair[0]:
-                            self.modifiers[key][str(ind)] = float(data_pair[1])
+                            if "R" in data_pair[0]:
+                                # problem on some PPK2s with wrong calibration values - this doesn't fix it
+                                if float(data_pair[1]) != 0:
+                                    self.modifiers[key][str(ind)] = float(
+                                        data_pair[1])
+                            else:
+                                self.modifiers[key][str(ind)] = float(
+                                    data_pair[1])
 
             return True
         except Exception as e:
@@ -166,14 +171,18 @@ class PPK2_API():
 
     def _handle_raw_data(self, adc_value):
         """Convert raw value to analog value"""
-        current_measurement_range = min(self._get_masked_value(
-            adc_value, self.MEAS_RANGE), 4)  # 5 is the number of parameters
-        adc_result = self._get_masked_value(adc_value, self.MEAS_ADC) * 4
-        bits = self._get_masked_value(adc_value, self.MEAS_LOGIC)
-        analog_value = self.get_adc_result(
-            current_measurement_range, adc_result) * 10**6
-
-        return analog_value
+        try:
+            current_measurement_range = min(self._get_masked_value(
+                adc_value, self.MEAS_RANGE), 5)  # 5 is the number of parameters
+            adc_result = self._get_masked_value(adc_value, self.MEAS_ADC) * 4
+            # print(f"adc result {adc_result}")  # 564
+            bits = self._get_masked_value(adc_value, self.MEAS_LOGIC)
+            analog_value = self.get_adc_result(
+                current_measurement_range, adc_result) * 10**6
+            return analog_value
+        except:
+            print("Measurement outside of range!")
+            return None
 
     @staticmethod
     def list_devices():
@@ -210,25 +219,29 @@ class PPK2_API():
         """
         b_1, b_2 = self._convert_source_voltage(mV)
         self._write_serial((PPK2_Command.REGULATOR_SET, b_1, b_2))
-        #self.current_vdd = mV
+        self.current_vdd = mV
 
     def toggle_DUT_power(self, state):
         """Toggle DUT power based on parameter"""
         if state == "ON":
-            self._write_serial((PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.TRIGGER_SET))  # 12,1
+            self._write_serial(
+                (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.TRIGGER_SET))  # 12,1
 
         if state == "OFF":
-            self._write_serial((PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.NO_OP))  # 12,0
+            self._write_serial(
+                (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.NO_OP))  # 12,0
 
     def use_ampere_meter(self):
         """Configure device to use ampere meter"""
         self.mode = PPK2_Modes.AMPERE_MODE
-        self._write_serial((PPK2_Command.SET_POWER_MODE, PPK2_Command.TRIGGER_SET))  # 17,1
+        self._write_serial((PPK2_Command.SET_POWER_MODE,
+                            PPK2_Command.TRIGGER_SET))  # 17,1
 
     def use_source_meter(self):
         """Configure device to use source meter"""
         self.mode = PPK2_Modes.SOURCE_MODE
-        self._write_serial((PPK2_Command.SET_POWER_MODE, PPK2_Command.AVG_NUM_SET))  # 17,2
+        self._write_serial((PPK2_Command.SET_POWER_MODE,
+                            PPK2_Command.AVG_NUM_SET))  # 17,2
 
     def get_adc_result(self, current_range, adc_value):
         """Get result of adc conversion"""
@@ -236,14 +249,8 @@ class PPK2_API():
         result_without_gain = (adc_value - self.modifiers["O"][current_range]) * (
             self.adc_mult / self.modifiers["R"][current_range])
 
-        adc = self.modifiers["UG"][current_range] * (
-            result_without_gain *
-            (self.modifiers["GS"][current_range] *
-             result_without_gain + self.modifiers["GI"][current_range])
-             # this part is currently not used
-            + (self.modifiers["S"][current_range] + 
-               (self.current_vdd / 1000) + self.modifiers["I"][current_range])
-        )
+        adc = self.modifiers["UG"][current_range] * (result_without_gain * (self.modifiers["GS"][current_range] * result_without_gain + self.modifiers["GI"][current_range]) + (
+            self.modifiers["S"][current_range] * (self.current_vdd / 1000) + self.modifiers["I"][current_range]))
 
         self.rolling_avg = adc
         self.rolling_avg4 = adc
@@ -266,10 +273,12 @@ class PPK2_API():
         offset = self.remainder["len"]
         samples = []
 
-        first_reading = (self.remainder["sequence"] + buf[0:sample_size-offset])[:4]
+        first_reading = (
+            self.remainder["sequence"] + buf[0:sample_size-offset])[:4]
         adc_val = self._digital_to_analog(first_reading)
         measurement = self._handle_raw_data(adc_val)
-        samples.append(measurement)
+        if measurement is not None:
+            samples.append(measurement)
 
         offset = sample_size - offset
 
@@ -278,7 +287,8 @@ class PPK2_API():
             offset += sample_size
             adc_val = self._digital_to_analog(next_val)
             measurement = self._handle_raw_data(adc_val)
-            samples.append(measurement)
+            if measurement is not None:
+                samples.append(measurement)
 
         self.remainder["sequence"] = buf[offset:len(buf)]
         self.remainder["len"] = len(buf)-offset
