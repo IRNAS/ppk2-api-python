@@ -7,6 +7,7 @@ The official nRF Connect Power Profiler was used as a reference: https://github.
 import serial
 import time
 import struct
+import logging
 
 
 class PPK2_Command():
@@ -45,6 +46,7 @@ class PPK2_Modes():
 class PPK2_API():
     def __init__(self, port):
 
+        self.ser = None
         self.ser = serial.Serial(port)
         self.ser.baudrate = 9600
 
@@ -79,7 +81,11 @@ class PPK2_API():
 
     def __del__(self):
         """Destructor"""
-        self.ser.close()
+        try:
+            if self.ser:
+                self.ser.close()
+        except Exception as e:
+            logging.error(e)
 
     def _pack_struct(self, cmd_tuple):
         """Returns packed struct"""
@@ -87,8 +93,11 @@ class PPK2_API():
 
     def _write_serial(self, cmd_tuple):
         """Writes cmd bytes to serial"""
-        cmd_packed = self._pack_struct(cmd_tuple)
-        self.ser.write(cmd_packed)
+        try:
+            cmd_packed = self._pack_struct(cmd_tuple)
+            self.ser.write(cmd_packed)
+        except Exception as e:
+            logging.error(e)
 
     def _twos_comp(self, val):
         """Compute the 2's complement of int32 value"""
@@ -212,7 +221,7 @@ class PPK2_API():
         self._write_serial((PPK2_Command.AVERAGE_STOP, ))
 
     def set_source_voltage(self, mV):
-        """Inits device - based on observation only REGULATOR_SET is the command. 
+        """Inits device - based on observation only REGULATOR_SET is the command.
         The other two values correspond to the voltage level.
 
         800mV is the lowest setting - [3,32] - the values then increase linearly
@@ -223,13 +232,16 @@ class PPK2_API():
 
     def toggle_DUT_power(self, state):
         """Toggle DUT power based on parameter"""
-        if state == "ON":
-            self._write_serial(
-                (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.TRIGGER_SET))  # 12,1
+        try:
+            if state == "ON":
+                self._write_serial(
+                    (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.TRIGGER_SET))  # 12,1
 
-        if state == "OFF":
-            self._write_serial(
-                (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.NO_OP))  # 12,0
+            if state == "OFF":
+                self._write_serial(
+                    (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.NO_OP))  # 12,0
+        except:
+            pass
 
     def use_ampere_meter(self):
         """Configure device to use ampere meter"""
