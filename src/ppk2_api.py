@@ -7,7 +7,6 @@ The official nRF Connect Power Profiler was used as a reference: https://github.
 import serial
 import time
 import struct
-import logging
 
 
 class PPK2_Command():
@@ -75,6 +74,16 @@ class PPK2_API():
         self.MEAS_LOGIC = self._generate_mask(8, 24)
 
         self.mode = None
+
+        self.rolling_avg = None
+        self.rolling_avg4 = None
+        self.prev_range = None
+        self.consecutive_range_samples = 0
+
+        self.spike_filter_alpha = 0.18
+        self.spike_filter_alpha5 = 0.06
+        self.spike_filter_samples = 3
+        self.after_spike = 0
 
         # adc measurement buffer remainder and len of remainder
         self.remainder = {"sequence": b'', "len": 0}
@@ -162,7 +171,6 @@ class PPK2_API():
                             else:
                                 self.modifiers[key][str(ind)] = float(
                                     data_pair[1])
-
             return True
         except Exception as e:
             # if exception triggers serial port is probably not correct
@@ -176,20 +184,22 @@ class PPK2_API():
 
     def _get_masked_value(self, value, meas):
         masked_value = (value & meas["mask"]) >> meas["pos"]
+        if meas["pos"] == 24:
+            if masked_value == 255:
+                masked_value = -1
         return masked_value
 
     def _handle_raw_data(self, adc_value):
         """Convert raw value to analog value"""
         try:
             current_measurement_range = min(self._get_masked_value(
-                adc_value, self.MEAS_RANGE), 5)  # 5 is the number of parameters
+                adc_value, self.MEAS_RANGE), 4)  # 5 is the number of parameters
             adc_result = self._get_masked_value(adc_value, self.MEAS_ADC) * 4
-            # print(f"adc result {adc_result}")  # 564
             bits = self._get_masked_value(adc_value, self.MEAS_LOGIC)
             analog_value = self.get_adc_result(
                 current_measurement_range, adc_result) * 10**6
             return analog_value
-        except:
+        except Exception as e:
             print("Measurement outside of range!")
             return None
 
@@ -221,7 +231,7 @@ class PPK2_API():
         self._write_serial((PPK2_Command.AVERAGE_STOP, ))
 
     def set_source_voltage(self, mV):
-        """Inits device - based on observation only REGULATOR_SET is the command.
+        """Inits device - based on observation only REGULATOR_SET is the command. 
         The other two values correspond to the voltage level.
 
         800mV is the lowest setting - [3,32] - the values then increase linearly
@@ -260,13 +270,44 @@ class PPK2_API():
         current_range = str(current_range)
         result_without_gain = (adc_value - self.modifiers["O"][current_range]) * (
             self.adc_mult / self.modifiers["R"][current_range])
-
         adc = self.modifiers["UG"][current_range] * (result_without_gain * (self.modifiers["GS"][current_range] * result_without_gain + self.modifiers["GI"][current_range]) + (
             self.modifiers["S"][current_range] * (self.current_vdd / 1000) + self.modifiers["I"][current_range]))
 
-        self.rolling_avg = adc
-        self.rolling_avg4 = adc
+        prev_rolling_avg = self.rolling_avg
+        prev_rolling_avg4 = self.rolling_avg4
 
+        # spike filtering / rolling average
+        if self.rolling_avg is None:
+            self.rolling_avg = adc
+        else:
+            self.rolling_avg = self.spike_filter_alpha * adc + (1 - self.spike_filter_alpha) * self.rolling_avg
+        
+        if self.rolling_avg4 is None:
+            self.rolling_avg4 = adc
+        else:
+            self.rolling_avg4 = self.spike_filter_alpha5 * adc + (1 - self.spike_filter_alpha5) * self.rolling_avg4
+
+        if self.prev_range is None:
+            self.prev_range = current_range
+
+        if self.prev_range != current_range or self.after_spike > 0:
+            if self.prev_range != current_range:
+                self.consecutive_range_samples = 0
+                self.after_spike = self.spike_filter_samples
+            else:
+                self.consecutive_range_samples += 1
+
+            if current_range == "4":
+                if self.consecutive_range_samples < 2:
+                    self.rolling_avg = prev_rolling_avg
+                    self.rolling_avg4 = prev_rolling_avg4
+                adc = self.rolling_avg4
+            else:
+                adc = self.rolling_avg
+            
+            self.after_spike -= 1
+
+        self.prev_range = current_range
         return adc
 
     def _digital_to_analog(self, adc_value):
