@@ -19,15 +19,18 @@ To enable power monitoring in Ampere mode implement the following sequence:
 ```
 ppk2_test = PPK2_API("/dev/ttyACM3")  # serial port will be different for you
 ppk2_test.get_modifiers()
-ppk2_test.use_ampere_meter()  # set ampere meter mode
+ppk2_test.user_source_meter()  # set source meter mode
+ppk2_test.set_source_voltage(3300)  # set source voltage in mV
 ppk2_test.start_measuring()  # start measuring
 
 # read measured values in a for loop like this:
 for i in range(0, 1000):
     read_data = ppk2_test.get_data()
     if read_data != b'':
-        ppk2_test.average_of_sampling_period(read_data)
-    time.sleep(0.01)
+        samples = ppk2_test.get_samples(read_data)
+        print(f"Average of {len(samples)} samples is: {sum(samples)/len(samples)}uA")
+    time.sleep(0.001)  # lower time between sampling -> less samples read in one sampling period
+ppk2_test.stop_measuring()
 ```
 
 
