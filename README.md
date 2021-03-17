@@ -15,11 +15,11 @@ Unlike the original Power Profiler Kit, the PPK2 uses Serial to communicate with
 ## Usage
 At this point in time the library provides the basic API with a basic example showing how to read data and toggle DUT power.
 
-To enable power monitoring in Ampere mode implement the following sequence:
+To enable power monitoring in Source mode implement the following sequence:
 ```
 ppk2_test = PPK2_API("/dev/ttyACM3")  # serial port will be different for you
 ppk2_test.get_modifiers()
-ppk2_test.user_source_meter()  # set source meter mode
+ppk2_test.use_source_meter()  # set source meter mode
 ppk2_test.set_source_voltage(3300)  # set source voltage in mV
 ppk2_test.start_measuring()  # start measuring
 
@@ -30,6 +30,7 @@ for i in range(0, 1000):
         samples = ppk2_test.get_samples(read_data)
         print(f"Average of {len(samples)} samples is: {sum(samples)/len(samples)}uA")
     time.sleep(0.001)  # lower time between sampling -> less samples read in one sampling period
+    
 ppk2_test.stop_measuring()
 ```
 
