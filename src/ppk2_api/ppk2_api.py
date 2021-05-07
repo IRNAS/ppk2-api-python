@@ -7,7 +7,7 @@ The official nRF Connect Power Profiler was used as a reference: https://github.
 import serial
 import time
 import struct
-
+import logging
 
 class PPK2_Command():
     """Serial command opcodes"""
@@ -94,7 +94,7 @@ class PPK2_API():
             if self.ser:
                 self.ser.close()
         except Exception as e:
-            logging.error(e)
+            logging.error(f"An error occured while closing ppk2_api: {e}")
 
     def _pack_struct(self, cmd_tuple):
         """Returns packed struct"""
@@ -106,7 +106,7 @@ class PPK2_API():
             cmd_packed = self._pack_struct(cmd_tuple)
             self.ser.write(cmd_packed)
         except Exception as e:
-            logging.error(e)
+            logging.error(f"An error occured when writing to serial port: {e}")
 
     def _twos_comp(self, val):
         """Compute the 2's complement of int32 value"""
@@ -242,16 +242,13 @@ class PPK2_API():
 
     def toggle_DUT_power(self, state):
         """Toggle DUT power based on parameter"""
-        try:
-            if state == "ON":
-                self._write_serial(
-                    (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.TRIGGER_SET))  # 12,1
+        if state == "ON":
+            self._write_serial(
+                (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.TRIGGER_SET))  # 12,1
 
-            if state == "OFF":
-                self._write_serial(
-                    (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.NO_OP))  # 12,0
-        except:
-            pass
+        if state == "OFF":
+            self._write_serial(
+                (PPK2_Command.DEVICE_RUNNING_SET, PPK2_Command.NO_OP))  # 12,0
 
     def use_ampere_meter(self):
         """Configure device to use ampere meter"""
