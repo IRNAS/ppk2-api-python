@@ -1,2 +1,4 @@
 **/__pycache__/*
 src/ppk2_api.egg-info
+build
+dist
