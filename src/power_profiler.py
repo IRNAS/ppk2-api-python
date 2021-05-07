@@ -5,7 +5,7 @@ from threading import Thread
 # import numpy as np
 # import matplotlib.pyplot as plt
 # import matplotlib
-from src.ppk2_api import PPK2_API
+from ppk2_api.ppk2_api import PPK2_API
 
 class PowerProfiler():
     def __init__(self, serial_port=None, source_voltage_mV=3300, filename=None):
