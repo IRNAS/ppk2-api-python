@@ -9,6 +9,9 @@ import time
 import struct
 import logging
 
+import multiprocessing
+import queue
+
 class PPK2_Command():
     """Serial command opcodes"""
     NO_OP = 0x00
@@ -344,3 +347,119 @@ class PPK2_API():
         self.remainder["len"] = len(buf)-offset
 
         return samples  # return list of samples, handle those lists in PPK2 API wrapper
+
+
+class PPK_Fetch(multiprocessing.Process):
+    '''
+    Background process for polling the data in multiprocessing variant
+    '''
+    def __init__(self, ppk2, quit_evt, buffer_len_s=10, buffer_chunk_s=0.5):
+        super().__init__()
+        self._ppk2 = ppk2
+        self._quit = quit_evt
+
+        self.print_stats = False
+        self._stats = (None, None)
+        self._last_timestamp = 0
+
+        self._buffer_max_len = int(buffer_len_s*100000*4)    # 100k 4-byte samples per second
+        self._buffer_chunk = int(buffer_chunk_s*100000*4)    # put in the queue in chunks of 0.5s
+
+        # round buffers to a whole sample
+        if self._buffer_max_len%4!=0:
+            self._buffer_max_len = (self._buffer_max_len//4)*4
+        if self._buffer_chunk%4!=0:
+            self._buffer_chunk = (self._buffer_chunk//4)*4
+
+        self._buffer_q = multiprocessing.Queue()
+
+    def run(self):
+        s = 0
+        t = time.time()
+        local_buffer = b''
+        while not self._quit.is_set():
+            d = PPK2_API.get_data(self._ppk2)
+            tm_now = time.time()
+            local_buffer += d
+            while len(local_buffer)>=self._buffer_chunk:
+                # FIXME: check if lock might be needed when discarding old data
+                self._buffer_q.put(local_buffer[:self._buffer_chunk])
+                while self._buffer_q.qsize()>self._buffer_max_len/self._buffer_chunk:
+                    self._buffer_q.get()
+                local_buffer = local_buffer[self._buffer_chunk:]
+                self._last_timestamp = tm_now
+                #print(len(d), len(local_buffer), self._buffer_q.qsize())
+
+            # calculate stats
+            s += len(d)
+            dt = tm_now-t
+            if dt>=1.0:
+                if self.print_stats:
+                    print(s, dt)
+                self._stats = (s, dt)
+                s = 0
+                t = tm_now
+            time.sleep(0.002)
+
+        # process would hang on join() if there's data in the buffer after the measurement is done
+        while True:
+            try:
+                self._buffer_q.get(block=False)
+            except queue.Empty:
+                break
+
+    def get_data(self):
+        ret = b''
+        count = 0
+        while True:
+            try:
+                ret += self._buffer_q.get(timeout=0.2) # get_nowait sometimes skips a chunk for some reason
+                count += 1
+            except queue.Empty:
+                break
+        return ret
+
+
+class PPK2_MP(PPK2_API):
+    '''
+    Multiprocessing variant of the object. The interface is the same as for the regular one except it spawns
+    a background process on start_measuring()
+    '''
+    def __init__(self, port, buffer_seconds=10, buffer_chunk_seconds=0.5):
+        '''
+        port - port where PPK2 is connected
+        buffer_seconds - how many seconds of data to keep in the buffer
+        '''
+        super().__init__(port)
+        self._fetcher = None
+        self._quit_evt = multiprocessing.Event()
+        self._buffer_seconds = buffer_seconds
+
+        # stop measurement in case it was already started
+        PPK2_API.stop_measuring(self)
+
+    def start_measuring(self):
+        # discard the data in the buffer
+        while self.get_data()!=b'':
+            pass
+
+        PPK2_API.start_measuring(self)
+        if self._fetcher is not None:
+            # fetcher already started
+            return
+        self._quit_evt.clear()
+        self._fetcher = PPK_Fetch(self, self._quit_evt, self._buffer_seconds)
+        self._fetcher.start()
+
+    def stop_measuring(self):
+        PPK2_API.stop_measuring(self)
+        PPK2_API.get_data(self) # flush the serial buffer (to prevent unicode error on next command)
+        self._quit_evt.set()
+        self._fetcher.join() # join() will block if the queue isn't empty
+
+    def get_data(self):
+        try:
+            return self._fetcher.get_data()
+        except (TypeError, AttributeError):
+            return b''
+

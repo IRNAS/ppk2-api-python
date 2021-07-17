@@ -34,6 +34,27 @@ for i in range(0, 1000):
 ppk2_test.stop_measuring()
 ```
 
+## Multiprocessing version
+Regular version will struggle to get all samples. Multiprocessing version spawns another process in the background which polls the device constantly for new samples and holds the last 10 seconds of data (default, configurable) in the buffer so get_data() can be called less frequently.
+
+```
+ppk2_test = PPK2_MP("/dev/ttyACM3")  # serial port will be different for you
+ppk2_test.get_modifiers()
+ppk2_test.use_source_meter()  # set source meter mode
+ppk2_test.set_source_voltage(3300)  # set source voltage in mV
+ppk2_test.start_measuring()  # start measuring
+
+# read measured values in a for loop like this:
+for i in range(0, 10):
+    read_data = ppk2_test.get_data()
+    if read_data != b'':
+        samples = ppk2_test.get_samples(read_data)
+        print(f"Average of {len(samples)} samples is: {sum(samples)/len(samples)}uA")
+    time.sleep(1)  # we can do other stuff while the background process if fetching samples
+
+ppk2_test.stop_measuring()
+
+```
 
 ## Licensing
 pp2-api-python is licensed under [GPL V2 license](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html).
