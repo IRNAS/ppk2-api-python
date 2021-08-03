@@ -362,14 +362,14 @@ class PPK_Fetch(multiprocessing.Process):
         self._stats = (None, None)
         self._last_timestamp = 0
 
-        self._buffer_max_len = int(buffer_len_s*100000*4)    # 100k 4-byte samples per second
-        self._buffer_chunk = int(buffer_chunk_s*100000*4)    # put in the queue in chunks of 0.5s
+        self._buffer_max_len = int(buffer_len_s * 100000 * 4)    # 100k 4-byte samples per second
+        self._buffer_chunk = int(buffer_chunk_s * 100000 * 4)    # put in the queue in chunks of 0.5s
 
         # round buffers to a whole sample
-        if self._buffer_max_len%4!=0:
-            self._buffer_max_len = (self._buffer_max_len//4)*4
-        if self._buffer_chunk%4!=0:
-            self._buffer_chunk = (self._buffer_chunk//4)*4
+        if self._buffer_max_len % 4 != 0:
+            self._buffer_max_len = (self._buffer_max_len // 4) * 4
+        if self._buffer_chunk % 4 != 0:
+            self._buffer_chunk = (self._buffer_chunk // 4) * 4
 
         self._buffer_q = multiprocessing.Queue()
 
@@ -381,7 +381,7 @@ class PPK_Fetch(multiprocessing.Process):
             d = PPK2_API.get_data(self._ppk2)
             tm_now = time.time()
             local_buffer += d
-            while len(local_buffer)>=self._buffer_chunk:
+            while len(local_buffer) >= self._buffer_chunk:
                 # FIXME: check if lock might be needed when discarding old data
                 self._buffer_q.put(local_buffer[:self._buffer_chunk])
                 while self._buffer_q.qsize()>self._buffer_max_len/self._buffer_chunk:
@@ -392,8 +392,8 @@ class PPK_Fetch(multiprocessing.Process):
 
             # calculate stats
             s += len(d)
-            dt = tm_now-t
-            if dt>=1.0:
+            dt = tm_now - t
+            if dt >= 1.0:
                 if self.print_stats:
                     print(s, dt)
                 self._stats = (s, dt)
@@ -425,7 +425,7 @@ class PPK2_MP(PPK2_API):
     Multiprocessing variant of the object. The interface is the same as for the regular one except it spawns
     a background process on start_measuring()
     '''
-    def __init__(self, port, buffer_seconds=10, buffer_chunk_seconds=0.5):
+    def __init__(self, port, buffer_seconds=10):
         '''
         port - port where PPK2 is connected
         buffer_seconds - how many seconds of data to keep in the buffer
