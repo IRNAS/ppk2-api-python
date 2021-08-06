@@ -7,7 +7,7 @@ The basic ampere mode sequence is:
 3. read stream of data
 """
 import time
-from ppk2_api.ppk2_api.ppk2_api import PPK2_MP
+from ppk2_api.ppk2_api import PPK2_MP
 
 ppk2s_connected = PPK2_MP.list_devices()
 if(len(ppk2s_connected) == 1):
