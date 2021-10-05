@@ -4,13 +4,13 @@ The PPK2 uses Serial communication.
 The official nRF Connect Power Profiler was used as a reference: https://github.com/NordicSemiconductor/pc-nrfconnect-ppk
 """
 
-import serial
 import time
+import serial
 import struct
 import logging
 
-import multiprocessing
 import queue
+import multiprocessing
 
 class PPK2_Command():
     """Serial command opcodes"""
@@ -393,13 +393,14 @@ class PPK_Fetch(multiprocessing.Process):
             # calculate stats
             s += len(d)
             dt = tm_now - t
-            if dt >= 1.0:
+            if dt >= 0.1:
                 if self.print_stats:
-                    print(s, dt)
+                    print(f"Samples: {s}, delta time: {dt}")
                 self._stats = (s, dt)
                 s = 0
                 t = tm_now
-            time.sleep(0.002)
+
+            time.sleep(0.0001)
 
         # process would hang on join() if there's data in the buffer after the measurement is done
         while True:
@@ -413,7 +414,7 @@ class PPK_Fetch(multiprocessing.Process):
         count = 0
         while True:
             try:
-                ret += self._buffer_q.get(timeout=0.2) # get_nowait sometimes skips a chunk for some reason
+                ret += self._buffer_q.get(timeout=0.01) # get_nowait sometimes skips a chunk for some reason
                 count += 1
             except queue.Empty:
                 break
@@ -435,19 +436,28 @@ class PPK2_MP(PPK2_API):
         self._quit_evt = multiprocessing.Event()
         self._buffer_seconds = buffer_seconds
 
-        # stop measurement in case it was already started
+    def __del__(self):
+        """Destructor"""
         PPK2_API.stop_measuring(self)
+        self._quit_evt.clear()
+        self._quit_evt = None
+        del self._quit_evt
+        if self._fetcher is not None:
+            self._fetcher.join()
+        self._fetcher = None
+        del self._fetcher
 
     def start_measuring(self):
         # discard the data in the buffer
+        self.stop_measuring()
         while self.get_data()!=b'':
             pass
 
         PPK2_API.start_measuring(self)
-        if self._fetcher is not None:
-            # fetcher already started
-            return
         self._quit_evt.clear()
+        if self._fetcher is not None:
+            return
+        
         self._fetcher = PPK_Fetch(self, self._quit_evt, self._buffer_seconds)
         self._fetcher.start()
 
@@ -455,11 +465,12 @@ class PPK2_MP(PPK2_API):
         PPK2_API.stop_measuring(self)
         PPK2_API.get_data(self) # flush the serial buffer (to prevent unicode error on next command)
         self._quit_evt.set()
-        self._fetcher.join() # join() will block if the queue isn't empty
+        if self._fetcher is not None:
+            self._fetcher.join() # join() will block if the queue isn't empty
+            self._fetcher = None
 
     def get_data(self):
         try:
             return self._fetcher.get_data()
         except (TypeError, AttributeError):
             return b''
-
