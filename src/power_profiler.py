@@ -5,7 +5,7 @@ from threading import Thread
 # import numpy as np
 # import matplotlib.pyplot as plt
 # import matplotlib
-from ppk2_api.ppk2_api import PPK2_API
+from ppk2_api.ppk2_api import PPK2_MP as PPK2_API
 
 class PowerProfiler():
     def __init__(self, serial_port=None, source_voltage_mV=3300, filename=None):
@@ -14,27 +14,36 @@ class PowerProfiler():
         self.measurement_thread = None
         self.ppk2 = None
 
-        try:
+        print(f"Initing power profiler")
+
+        # try:
+        if serial_port:
+            self.ppk2 = PPK2_API(serial_port)
+        else:
+            serial_port = self.discover_port()
+            print(f"Opening serial port: {serial_port}")
             if serial_port:
                 self.ppk2 = PPK2_API(serial_port)
-            else:
-                serial_port = self.discover_port()
-                if serial_port:
-                    self.ppk2 = PPK2_API(serial_port)
+
+        try:
             ret = self.ppk2.get_modifiers()  # try to read modifiers, if it fails serial port is probably not correct
+            print(f"Initialized ppk2 api: {ret}")
         except Exception as e:
+            print(f"Error initializing power profiler: {e}")
             ret = None
             raise e
 
         if not ret:
             self.ppk2 = None
-            #raise Exception(f"Error when initing PowerProfiler with serial port {serial_port}")
+            raise Exception(f"Error when initing PowerProfiler with serial port {serial_port}")
         else:
             self.ppk2.use_source_meter()
 
             self.source_voltage_mV = source_voltage_mV
 
             self.ppk2.set_source_voltage(self.source_voltage_mV)  # set to 3.3V
+
+            print(f"Set power profiler source voltage: {self.source_voltage_mV}")
 
             self.measuring = False
             self.current_measurements = []
@@ -73,12 +82,19 @@ class PowerProfiler():
         self.measuring = False
         self.stop = True
 
+        print("Deleting power profiler")
+
         if self.measurement_thread:
+            print(f"Joining measurement thread")
             self.measurement_thread.join()
             self.measurement_thread = None
 
         if self.ppk2:
+            print(f"Disabling ppk2 power")
             self.disable_power()
+            del self.ppk2
+
+        print(f"Deleted power profiler")
 
     def discover_port(self):
         """Discovers ppk2 serial port"""
@@ -111,8 +127,7 @@ class PowerProfiler():
             if self.measuring:  # read data if currently measuring
                 read_data = self.ppk2.get_data()
                 if read_data != b'':
-                    #samples = self.ppk2.get_samples(read_data)
-                    samples = self._average_samples(self.ppk2.get_samples(read_data), 1024)  # optionally average samples
+                    samples = self.ppk2.get_samples(read_data)
                     self.current_measurements += samples  # can easily sum lists, will append individual data
             time.sleep(0.001)  # TODO figure out correct sleep duration
 
@@ -129,8 +144,8 @@ class PowerProfiler():
         """Start measuring"""
         if not self.measuring:  # toggle measuring flag only if currently not measuring
             self.current_measurements = []  # reset current measurements
-            self.ppk2.start_measuring()  # send command to ppk2
             self.measuring = True  # set internal flag
+            self.ppk2.start_measuring()  # send command to ppk2
             self.measurement_start_time = time.time()
 
     def stop_measuring(self):
@@ -149,6 +164,9 @@ class PowerProfiler():
     def get_max_current_mA(self):
         return max(self.current_measurements) / 1000
 
+    def get_num_measurements(self):
+        return len(self.current_measurements)
+
     def get_average_current_mA(self):
         """Returns average current of last measurement in mA"""
         if len(self.current_measurements) == 0:
@@ -159,7 +177,7 @@ class PowerProfiler():
 
     def get_average_power_consumption_mWh(self):
         """Return average power consumption of last measurement in mWh"""
-        average_current_mA = self.get_average_current_mA()  # convert microamperes to milliamperes
+        average_current_mA = self.get_average_current_mA()
         average_power_mW = (self.source_voltage_mV / 1000) * average_current_mA  # divide by 1000 as source voltage is in millivolts - this gives us milliwatts
         measurement_duration_h = self.get_measurement_duration_s() / 3600  # duration in seconds, divide by 3600 to get hours
         average_consumption_mWh = average_power_mW * measurement_duration_h
@@ -175,8 +193,3 @@ class PowerProfiler():
         """Returns duration of measurement"""
         measurement_duration_s = (self.measurement_stop_time - self.measurement_start_time)  # measurement duration in seconds
         return measurement_duration_s
-
-# pp = PowerProfiler("/dev/ttyACM1")
-# pp.start_measuring()
-# time.sleep(10)
-# pp.stop_measuring()
