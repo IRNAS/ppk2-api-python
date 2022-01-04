@@ -8,7 +8,7 @@ import time
 import serial
 import struct
 import logging
-
+import os
 import queue
 import multiprocessing
 
@@ -210,7 +210,10 @@ class PPK2_API():
     def list_devices():
         import serial.tools.list_ports
         ports = serial.tools.list_ports.comports()
-        devices = [port.device for port in ports if port.product == 'PPK2']
+        if os.name == 'nt':
+            devices = [port.device for port in ports if port.description.startswith("nRF Connect USB CDC ACM")]
+        else:
+            devices = [port.device for port in ports if port.product == 'PPK2']
         return devices
 
     def get_data(self):
