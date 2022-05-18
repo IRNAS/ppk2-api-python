@@ -68,7 +68,7 @@ class PPK2_API():
         self.vdd_low = 800
         self.vdd_high = 5000
 
-        self.current_vdd = 0
+        self.current_vdd = None
 
         self.adc_mult = 1.8 / 163840
 
@@ -229,11 +229,17 @@ class PPK2_API():
         return ret
 
     def start_measuring(self):
-        """Start continous measurement"""
+        """Start continuous measurement"""
+        if not self.current_vdd:
+            if self.mode == PPK2_Modes.SOURCE_MODE:
+                raise Exception("Output voltage not set!")
+            if self.mode == PPK2_Modes.AMPERE_MODE:
+                raise Exception("Input voltage not set!")
+
         self._write_serial((PPK2_Command.AVERAGE_START, ))
 
     def stop_measuring(self):
-        """Stop continous measurement"""
+        """Stop continuous measurement"""
         self._write_serial((PPK2_Command.AVERAGE_STOP, ))
 
     def set_source_voltage(self, mV):
