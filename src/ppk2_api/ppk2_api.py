@@ -472,7 +472,7 @@ class PPK2_MP(PPK2_API):
 
     def stop_measuring(self):
         PPK2_API.stop_measuring(self)
-        PPK2_API.get_data(self) # flush the serial buffer (to prevent unicode error on next command)
+        PPK2_MP.get_data(self) # flush the serial buffer (to prevent unicode error on next command)
         self._quit_evt.set()
         if self._fetcher is not None:
             self._fetcher.join() # join() will block if the queue isn't empty
