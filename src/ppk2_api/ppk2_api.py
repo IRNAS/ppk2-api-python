@@ -397,7 +397,7 @@ class PPK_Fetch(multiprocessing.Process):
                     self._buffer_q.get()
                 local_buffer = local_buffer[self._buffer_chunk:]
                 self._last_timestamp = tm_now
-                #print(len(d), len(local_buffer), self._buffer_q.qsize())
+                # print(len(d), len(local_buffer), self._buffer_q.qsize())
 
             # calculate stats
             s += len(d)
@@ -423,7 +423,7 @@ class PPK_Fetch(multiprocessing.Process):
         count = 0
         while True:
             try:
-                ret += self._buffer_q.get(timeout=0.01) # get_nowait sometimes skips a chunk for some reason
+                ret += self._buffer_q.get(timeout=0.001) # get_nowait sometimes skips a chunk for some reason
                 count += 1
             except queue.Empty:
                 break
@@ -435,15 +435,18 @@ class PPK2_MP(PPK2_API):
     Multiprocessing variant of the object. The interface is the same as for the regular one except it spawns
     a background process on start_measuring()
     '''
-    def __init__(self, port, buffer_seconds=10):
+    def __init__(self, port, buffer_max_size_seconds=10, buffer_chunk_seconds=0.1):
         '''
         port - port where PPK2 is connected
-        buffer_seconds - how many seconds of data to keep in the buffer
+        buffer_max_size_seconds - how many seconds of data to keep in the buffer
+        buffer_chunk_seconds - how many seconds of data to put in the queue at once
         '''
         super().__init__(port)
+
         self._fetcher = None
         self._quit_evt = multiprocessing.Event()
-        self._buffer_seconds = buffer_seconds
+        self._buffer_max_size_seconds = buffer_max_size_seconds
+        self._buffer_chunk_seconds = buffer_chunk_seconds
 
     def __del__(self):
         """Destructor"""
@@ -467,7 +470,7 @@ class PPK2_MP(PPK2_API):
         if self._fetcher is not None:
             return
         
-        self._fetcher = PPK_Fetch(self, self._quit_evt, self._buffer_seconds)
+        self._fetcher = PPK_Fetch(self, self._quit_evt, self._buffer_max_size_seconds, self._buffer_chunk_seconds)
         self._fetcher.start()
 
     def stop_measuring(self):
