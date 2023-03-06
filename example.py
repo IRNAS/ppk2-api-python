@@ -19,8 +19,10 @@ else:
 
 ppk2_test = PPK2_API(ppk2_port)
 ppk2_test.get_modifiers()
-ppk2_test.use_ampere_meter()  # set ampere meter mode
-ppk2_test.toggle_DUT_power("OFF")  # disable DUT power
+ppk2_test.set_source_voltage(3300)
+
+ppk2_test.use_source_meter()  # set source meter mode
+ppk2_test.toggle_DUT_power("ON")  # enable DUT power
 
 ppk2_test.start_measuring()  # start measuring
 # measurements are a constant stream of bytes
@@ -34,7 +36,9 @@ for i in range(0, 1000):
         print(f"Average of {len(samples)} samples is: {sum(samples)/len(samples)}uA")
     time.sleep(0.01)
 
-ppk2_test.toggle_DUT_power("ON")
+ppk2_test.toggle_DUT_power("OFF")  # disable DUT power
+
+ppk2_test.use_ampere_meter()  # set ampere meter mode
 
 ppk2_test.start_measuring()
 for i in range(0, 1000):
@@ -42,6 +46,6 @@ for i in range(0, 1000):
     if read_data != b'':
         samples = ppk2_test.get_samples(read_data)
         print(f"Average of {len(samples)} samples is: {sum(samples)/len(samples)}uA")
-    time.sleep(0.001)  # lower time between sampling -> less samples read in one sampling period
+    time.sleep(0.01)  # lower time between sampling -> less samples read in one sampling period
 
 ppk2_test.stop_measuring()
