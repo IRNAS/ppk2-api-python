@@ -46,10 +46,10 @@ class PPK2_Modes():
 
 
 class PPK2_API():
-    def __init__(self, port):
+    def __init__(self, port, read_timeout=1, write_timeout=1):
 
         self.ser = None
-        self.ser = serial.Serial(port)
+        self.ser = serial.Serial(port, exclusive=True, timeout=read_timeout, write_timeout=write_timeout)
         self.ser.baudrate = 9600
 
         self.modifiers = {
