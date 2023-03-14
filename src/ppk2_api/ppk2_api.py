@@ -10,7 +10,7 @@ import struct
 import logging
 import os
 import queue
-import multiprocessing
+import threading
 
 class PPK2_Command():
     """Serial command opcodes"""
@@ -358,9 +358,9 @@ class PPK2_API():
         return samples  # return list of samples, handle those lists in PPK2 API wrapper
 
 
-class PPK_Fetch(multiprocessing.Process):
+class PPK_Fetch(threading.Thread):
     '''
-    Background process for polling the data in multiprocessing variant
+    Background process for polling the data in multi-threaded variant
     '''
     def __init__(self, ppk2, quit_evt, buffer_len_s=10, buffer_chunk_s=0.5):
         super().__init__()
@@ -380,7 +380,7 @@ class PPK_Fetch(multiprocessing.Process):
         if self._buffer_chunk % 4 != 0:
             self._buffer_chunk = (self._buffer_chunk // 4) * 4
 
-        self._buffer_q = multiprocessing.Queue()
+        self._buffer_q = queue.Queue()
 
     def run(self):
         s = 0
@@ -444,7 +444,7 @@ class PPK2_MP(PPK2_API):
         super().__init__(port)
 
         self._fetcher = None
-        self._quit_evt = multiprocessing.Event()
+        self._quit_evt = threading.Event()
         self._buffer_max_size_seconds = buffer_max_size_seconds
         self._buffer_chunk_seconds = buffer_chunk_seconds
 
