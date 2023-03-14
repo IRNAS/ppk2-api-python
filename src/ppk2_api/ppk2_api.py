@@ -3,14 +3,14 @@ This python API is written for use with the Nordic Semiconductor's Power Profile
 The PPK2 uses Serial communication.
 The official nRF Connect Power Profiler was used as a reference: https://github.com/NordicSemiconductor/pc-nrfconnect-ppk
 """
-import threading
+
 import time
 import serial
 import struct
 import logging
 import os
 import queue
-
+import threading
 
 class PPK2_Command():
     """Serial command opcodes"""
@@ -243,7 +243,7 @@ class PPK2_API():
         self._write_serial((PPK2_Command.AVERAGE_STOP, ))
 
     def set_source_voltage(self, mV):
-        """Inits device - based on observation only REGULATOR_SET is the command.
+        """Inits device - based on observation only REGULATOR_SET is the command. 
         The other two values correspond to the voltage level.
 
         800mV is the lowest setting - [3,32] - the values then increase linearly
@@ -290,7 +290,7 @@ class PPK2_API():
             self.rolling_avg = adc
         else:
             self.rolling_avg = self.spike_filter_alpha * adc + (1 - self.spike_filter_alpha) * self.rolling_avg
-
+        
         if self.rolling_avg4 is None:
             self.rolling_avg4 = adc
         else:
@@ -313,7 +313,7 @@ class PPK2_API():
                 adc = self.rolling_avg4
             else:
                 adc = self.rolling_avg
-
+            
             self.after_spike -= 1
 
         self.prev_range = current_range
@@ -360,7 +360,7 @@ class PPK2_API():
 
 class PPK_Fetch(threading.Thread):
     '''
-    Background process for polling the data in multi-threading variant
+    Background process for polling the data in multi-threaded variant
     '''
     def __init__(self, ppk2, quit_evt, buffer_len_s=10, buffer_chunk_s=0.5):
         super().__init__()
@@ -397,7 +397,7 @@ class PPK_Fetch(threading.Thread):
                     self._buffer_q.get()
                 local_buffer = local_buffer[self._buffer_chunk:]
                 self._last_timestamp = tm_now
-                #print(len(d), len(local_buffer), self._buffer_q.qsize())
+                # print(len(d), len(local_buffer), self._buffer_q.qsize())
 
             # calculate stats
             s += len(d)
@@ -423,7 +423,7 @@ class PPK_Fetch(threading.Thread):
         count = 0
         while True:
             try:
-                ret += self._buffer_q.get(timeout=0.01) # get_nowait sometimes skips a chunk for some reason
+                ret += self._buffer_q.get(timeout=0.001) # get_nowait sometimes skips a chunk for some reason
                 count += 1
             except queue.Empty:
                 break
@@ -435,15 +435,18 @@ class PPK2_MP(PPK2_API):
     Multiprocessing variant of the object. The interface is the same as for the regular one except it spawns
     a background process on start_measuring()
     '''
-    def __init__(self, port, buffer_seconds=10):
+    def __init__(self, port, buffer_max_size_seconds=10, buffer_chunk_seconds=0.1):
         '''
         port - port where PPK2 is connected
-        buffer_seconds - how many seconds of data to keep in the buffer
+        buffer_max_size_seconds - how many seconds of data to keep in the buffer
+        buffer_chunk_seconds - how many seconds of data to put in the queue at once
         '''
         super().__init__(port)
+
         self._fetcher = None
         self._quit_evt = threading.Event()
-        self._buffer_seconds = buffer_seconds
+        self._buffer_max_size_seconds = buffer_max_size_seconds
+        self._buffer_chunk_seconds = buffer_chunk_seconds
 
     def __del__(self):
         """Destructor"""
@@ -466,8 +469,8 @@ class PPK2_MP(PPK2_API):
         self._quit_evt.clear()
         if self._fetcher is not None:
             return
-
-        self._fetcher = PPK_Fetch(self, self._quit_evt, self._buffer_seconds)
+        
+        self._fetcher = PPK_Fetch(self, self._quit_evt, self._buffer_max_size_seconds, self._buffer_chunk_seconds)
         self._fetcher.start()
 
     def stop_measuring(self):
