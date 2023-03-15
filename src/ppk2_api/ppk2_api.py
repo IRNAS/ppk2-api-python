@@ -46,10 +46,14 @@ class PPK2_Modes():
 
 
 class PPK2_API():
-    def __init__(self, port, read_timeout=1, write_timeout=1):
+    def __init__(self, port: str, **kwargs):
+        '''
+        port - port where PPK2 is connected
+        **kwargs - keyword arguments to pass to the pySerial constructor
+        '''
 
         self.ser = None
-        self.ser = serial.Serial(port, exclusive=True, timeout=read_timeout, write_timeout=write_timeout)
+        self.ser = serial.Serial(port, **kwargs)
         self.ser.baudrate = 9600
 
         self.modifiers = {
@@ -435,13 +439,14 @@ class PPK2_MP(PPK2_API):
     Multiprocessing variant of the object. The interface is the same as for the regular one except it spawns
     a background process on start_measuring()
     '''
-    def __init__(self, port, buffer_max_size_seconds=10, buffer_chunk_seconds=0.1):
+    def __init__(self, port, buffer_max_size_seconds=10, buffer_chunk_seconds=0.1, **kwargs):
         '''
         port - port where PPK2 is connected
         buffer_max_size_seconds - how many seconds of data to keep in the buffer
         buffer_chunk_seconds - how many seconds of data to put in the queue at once
+        **kwargs - keyword arguments to pass to the pySerial constructor
         '''
-        super().__init__(port)
+        super().__init__(port, **kwargs)
 
         self._fetcher = None
         self._quit_evt = threading.Event()
