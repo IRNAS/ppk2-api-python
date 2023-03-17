@@ -7,7 +7,7 @@ The basic ampere mode sequence is:
 3. read stream of data
 """
 import time
-from ppk2_api.ppk2_api import PPK2_MP as PPK2_API
+from src.ppk2_api.ppk2_api import PPK2_MP as PPK2_API
 
 ppk2s_connected = PPK2_API.list_devices()
 if(len(ppk2s_connected) == 1):
@@ -17,7 +17,7 @@ else:
     print(f'Too many connected PPK2\'s: {ppk2s_connected}')
     exit()
 
-ppk2_test = PPK2_API(ppk2_port, buffer_max_size_seconds=1, buffer_chunk_seconds=0.01)
+ppk2_test = PPK2_API(ppk2_port, buffer_max_size_seconds=1, buffer_chunk_seconds=0.01, timeout=1, write_timeout=1, exclusive=True)
 ppk2_test.get_modifiers()
 ppk2_test.set_source_voltage(3300)
 
