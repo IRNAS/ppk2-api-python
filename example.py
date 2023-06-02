@@ -17,7 +17,7 @@ else:
     print(f'Too many connected PPK2\'s: {ppk2s_connected}')
     exit()
 
-ppk2_test = PPK2_API(ppk2_port)
+ppk2_test = PPK2_API(ppk2_port, timeout=1, write_timeout=1, exclusive=True)
 ppk2_test.get_modifiers()
 ppk2_test.set_source_voltage(3300)
 

@@ -17,7 +17,7 @@ else:
     print(f'Too many connected PPK2\'s: {ppk2s_connected}')
     exit()
 
-ppk2_test = PPK2_API(ppk2_port, buffer_max_size_seconds=70, buffer_chunk_seconds=0.5)
+ppk2_test = PPK2_API(ppk2_port, buffer_max_size_seconds=1, buffer_chunk_seconds=0.01, timeout=1, write_timeout=1, exclusive=True)
 ppk2_test.get_modifiers()
 ppk2_test.set_source_voltage(3300)
 

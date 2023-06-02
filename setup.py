@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name="ppk2-api",
-    version="0.0.2",
+    version="0.9.1",
     description="API for Nordic Semiconductor's Power Profiler Kit II (PPK 2).",
     url="https://github.com/IRNAS/ppk2-api-python",
     packages=find_packages("src"),
