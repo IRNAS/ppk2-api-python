@@ -189,11 +189,8 @@ class PPK2_API():
         mask = self._twos_comp(mask)
         return {"mask": mask, "pos": pos}
 
-    def _get_masked_value(self, value, meas):
+    def _get_masked_value(self, value, meas, is_bits=False):
         masked_value = (value & meas["mask"]) >> meas["pos"]
-        if meas["pos"] == 24:
-            if masked_value == 255:
-                masked_value = -1
         return masked_value
 
     def _handle_raw_data(self, adc_value):
@@ -205,10 +202,10 @@ class PPK2_API():
             bits = self._get_masked_value(adc_value, self.MEAS_LOGIC)
             analog_value = self.get_adc_result(
                 current_measurement_range, adc_result) * 10**6
-            return analog_value
+            return analog_value, bits
         except Exception as e:
             print("Measurement outside of range!")
-            return None
+            return None, None
 
     @staticmethod
     def list_devices():
@@ -327,6 +324,26 @@ class PPK2_API():
         """Convert discrete value to analog value"""
         return int.from_bytes(adc_value, byteorder="little", signed=False)  # convert reading to analog value
 
+    def digital_channels(self, bits):
+        """
+        Convert raw digital data to digital channels.
+
+        Returns a 2d matrix with 8 rows (one for each channel). Each row contains HIGH and LOW values for the selected channel.
+        """
+
+        # Prepare 2d matrix with 8 rows (one for each channel)
+        digital_channels = [[], [], [], [], [], [], [], []]
+        for sample in bits:
+            digital_channels[0].append((sample & 1) >> 0)
+            digital_channels[1].append((sample & 2) >> 1)
+            digital_channels[2].append((sample & 4) >> 2)
+            digital_channels[3].append((sample & 8) >> 3)
+            digital_channels[4].append((sample & 16) >> 4)
+            digital_channels[5].append((sample & 32) >> 5)
+            digital_channels[6].append((sample & 64) >> 6)
+            digital_channels[7].append((sample & 128) >> 7)
+        return digital_channels
+
     def get_samples(self, buf):
         """
         Returns list of samples read in one sampling period.
@@ -338,13 +355,16 @@ class PPK2_API():
         sample_size = 4  # one analog value is 4 bytes in size
         offset = self.remainder["len"]
         samples = []
+        raw_digital_output = []
 
         first_reading = (
             self.remainder["sequence"] + buf[0:sample_size-offset])[:4]
         adc_val = self._digital_to_analog(first_reading)
-        measurement = self._handle_raw_data(adc_val)
+        measurement, bits = self._handle_raw_data(adc_val)
         if measurement is not None:
             samples.append(measurement)
+        if bits is not None:
+            raw_digital_output.append(bits)
 
         offset = sample_size - offset
 
@@ -352,14 +372,18 @@ class PPK2_API():
             next_val = buf[offset:offset + sample_size]
             offset += sample_size
             adc_val = self._digital_to_analog(next_val)
-            measurement = self._handle_raw_data(adc_val)
+            measurement, bits = self._handle_raw_data(adc_val)
             if measurement is not None:
                 samples.append(measurement)
+            if bits is not None:
+                raw_digital_output.append(bits)
 
         self.remainder["sequence"] = buf[offset:len(buf)]
         self.remainder["len"] = len(buf)-offset
 
-        return samples  # return list of samples, handle those lists in PPK2 API wrapper
+        # return list of samples and raw digital outputs
+        # handle those lists in PPK2 API wrapper
+        return samples, raw_digital_output  
 
 
 class PPK_Fetch(threading.Thread):
@@ -401,7 +425,6 @@ class PPK_Fetch(threading.Thread):
                     self._buffer_q.get()
                 local_buffer = local_buffer[self._buffer_chunk:]
                 self._last_timestamp = tm_now
-                # print(len(d), len(local_buffer), self._buffer_q.qsize())
 
             # calculate stats
             s += len(d)
