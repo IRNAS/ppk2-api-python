@@ -190,8 +190,6 @@ class PPK2_API():
         return {"mask": mask, "pos": pos}
 
     def _get_masked_value(self, value, meas, is_bits=False):
-        # print(f"Value: {value}")
-        # print(f"Meas: {meas}")
         masked_value = (value & meas["mask"]) >> meas["pos"]
         return masked_value
 
@@ -427,7 +425,6 @@ class PPK_Fetch(threading.Thread):
                     self._buffer_q.get()
                 local_buffer = local_buffer[self._buffer_chunk:]
                 self._last_timestamp = tm_now
-                # print(len(d), len(local_buffer), self._buffer_q.qsize())
 
             # calculate stats
             s += len(d)

@@ -74,4 +74,4 @@ while True:
         print()
     time.sleep(0.001)  # lower time between sampling -> less samples read in one sampling period
 
-# ppk2_test.stop_measuring()
+ppk2_test.stop_measuring()
