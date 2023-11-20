@@ -98,6 +98,9 @@ class PPK2_API():
     def __del__(self):
         """Destructor"""
         try:
+            # reset device
+            self._write_serial((PPK2_Command.RESET,))
+
             if self.ser:
                 self.ser.close()
         except Exception as e:
