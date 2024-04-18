@@ -10,11 +10,12 @@ import time
 from ppk2_api.ppk2_api import PPK2_API
 
 ppk2s_connected = PPK2_API.list_devices()
-if(len(ppk2s_connected) == 1):
-    ppk2_port = ppk2s_connected[0]
-    print(f'Found PPK2 at {ppk2_port}')
+if len(ppk2s_connected) == 1:
+    ppk2_port = ppk2s_connected[0][0]
+    ppk2_serial = ppk2s_connected[0][1]
+    print(f"Found PPK2 at {ppk2_port} with serial number {ppk2_serial}")
 else:
-    print(f'Too many connected PPK2\'s: {ppk2s_connected}')
+    print(f"Too many connected PPK2's: {ppk2s_connected}")
     exit()
 
 ppk2_test = PPK2_API(ppk2_port, timeout=1, write_timeout=1, exclusive=True)
