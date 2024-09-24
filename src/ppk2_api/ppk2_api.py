@@ -158,8 +158,8 @@ class PPK2_API():
             time.sleep(0.1)
 
             # TODO add a read_until serial read function with a timeout
-            if read != b'' and "END" in read.decode("utf-8"):
-                return read.decode("utf-8")
+            if read != b'' and "END" in read.decode("utf-8", errors="replace"):
+                return read.decode("utf-8", errors="replace")
 
     def _parse_metadata(self, metadata):
         """Parse metadata and store it to modifiers"""
