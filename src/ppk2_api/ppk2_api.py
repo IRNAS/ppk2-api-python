@@ -219,13 +219,13 @@ class PPK2_API():
             devices = [
                 (port.device, port.serial_number[:8])
                 for port in ports
-                if port.description.startswith("nRF Connect USB CDC ACM")
+                if port.description.startswith("nRF Connect USB CDC ACM") and port.location.endswith("1")
             ]
         else:
             devices = [
                 (port.device, port.serial_number[:8])
                 for port in ports
-                if port.product == "PPK2"
+                if port.product == "PPK2" and port.location.endswith("1")
             ]
         return devices
 
