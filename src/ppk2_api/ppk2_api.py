@@ -153,13 +153,25 @@ class PPK2_API():
         """Read metadata"""
         # try to get metadata from device
         for _ in range(0, 5):
-            # it appears the second reading is the metadata
             read = self.ser.read(self.ser.in_waiting)
             time.sleep(0.1)
 
-            # TODO add a read_until serial read function with a timeout
-            if read != b'' and "END" in read.decode("utf-8"):
-                return read.decode("utf-8")
+            if not read:
+                continue  # No data, try again
+
+            # Try decoding the data
+            try:
+                metadata = read.decode("utf-8")
+            except UnicodeDecodeError:
+                # If decoding fails, try again in next iteration
+                continue
+
+            # Check if the metadata is valid (i.e., contains "END")
+            if "END" in metadata:
+                return metadata
+
+        # If we exit the loop, it means we couldn't get valid metadata
+        raise ValueError("Could not retrieve valid metadata from the device.")
 
     def _parse_metadata(self, metadata):
         """Parse metadata and store it to modifiers"""
@@ -229,17 +241,40 @@ class PPK2_API():
             ]
         return devices
 
+            
     def get_data(self):
         """Return readings of one sampling period"""
         sampling_data = self.ser.read(self.ser.in_waiting)
         return sampling_data
 
-    def get_modifiers(self):
-        """Gets and sets modifiers from device memory"""
-        self._write_serial((PPK2_Command.GET_META_DATA, ))
-        metadata = self._read_metadata()
-        ret = self._parse_metadata(metadata)
-        return ret
+    def get_modifiers(self, retries=2):
+        """ 
+        Retrieve and parse modifiers from the device memory, with optional retries.
+
+        In cases where the PPK2 tool did not shut down gracefully, the device may still
+        hold residual data from the previous session. The first GET_META_DATA command
+        may return a mix of valid metadata and garbage. Rather than parsing
+        and filtering out this garbage on the first try, issuing the GET_META_DATA command
+        again often yields clean data. This function will retry up to the
+        specified number of times before giving up.
+        """
+        
+        for attempt in range(1, retries + 1):
+            # Send command to request metadata
+            self._write_serial((PPK2_Command.GET_META_DATA, ))
+            try:
+                metadata = self._read_metadata()    
+                ret = self._parse_metadata(metadata)
+                print(f"Attempt {attempt}/{retries} - Got metadata from PPK2")
+
+                return ret
+            except ValueError as e:
+                print(f"Attempt {attempt}/{retries} - Failed to get valid PPK2 metadata: {e}")
+                # If this wasn't the last attempt, we try again by sending GET_META_DATA again.
+
+        
+        print("Failed to get modifiers after multiple attempts.")
+        return None
 
     def start_measuring(self):
         """Start continuous measurement"""
