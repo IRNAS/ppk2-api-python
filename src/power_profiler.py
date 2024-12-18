@@ -16,7 +16,7 @@ class PowerProfiler:
         self.measurement_thread = None
         self.ppk2 = None
 
-        print(f"Initing power profiler")
+        print("Initing power profiler")
 
         # try:
         if serial_port:
@@ -91,16 +91,16 @@ class PowerProfiler:
         print("Deleting power profiler")
 
         if self.measurement_thread:
-            print(f"Joining measurement thread")
+            print("Joining measurement thread")
             self.measurement_thread.join()
             self.measurement_thread = None
 
         if self.ppk2:
-            print(f"Disabling ppk2 power")
+            print("Disabling ppk2 power")
             self.disable_power()
             del self.ppk2
 
-        print(f"Deleted power profiler")
+        print("Deleted power profiler")
 
     def discover_port(self):
         """Discovers ppk2 serial port"""

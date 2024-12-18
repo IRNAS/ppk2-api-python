@@ -185,6 +185,7 @@ class PPK2_API:
             return True
         except Exception as e:
             # if exception triggers serial port is probably not correct
+            print(f"Failde to parse metadata: {e}")
             return None
 
     def _generate_mask(self, bits, pos):
@@ -210,7 +211,7 @@ class PPK2_API:
             )
             return analog_value, bits
         except Exception as e:
-            print("Measurement outside of range!")
+            print(f"Measurement outside of range! {e}")
             return None, None
 
     @staticmethod
