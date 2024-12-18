@@ -1,0 +1,9 @@
+name: Ruff
+run-name: Run Ruff
+on: [push]
+jobs:
+  check-bats-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v2
