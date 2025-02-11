@@ -1,4 +1,3 @@
-
 """
 Basic usage of PPK2 Python API - multiprocessing version.
 The basic ampere mode sequence is:
@@ -6,6 +5,7 @@ The basic ampere mode sequence is:
 2. set ampere mode
 3. read stream of data
 """
+
 import time
 from ppk2_api.ppk2_api import PPK2_MP as PPK2_API
 
@@ -18,24 +18,34 @@ else:
     print(f"Too many connected PPK2's: {ppk2s_connected}")
     exit()
 
-ppk2_test = PPK2_API(ppk2_port, buffer_max_size_seconds=1, buffer_chunk_seconds=0.01, timeout=1, write_timeout=1, exclusive=True)
+ppk2_test = PPK2_API(
+    ppk2_port,
+    buffer_max_size_seconds=1,
+    buffer_chunk_seconds=0.01,
+    timeout=1,
+    write_timeout=1,
+    exclusive=True,
+)
 ppk2_test.get_modifiers()
 ppk2_test.set_source_voltage(3300)
 
 """
 Source mode example
 """
-ppk2_test.use_source_meter()  # set source meter mode
-ppk2_test.toggle_DUT_power("ON")  # enable DUT power
+# set source meter mode
+ppk2_test.use_source_meter()
+# enable DUT power
+ppk2_test.toggle_DUT_power("ON")
+# start measuring
+ppk2_test.start_measuring()
 
-ppk2_test.start_measuring()  # start measuring
 # measurements are a constant stream of bytes
 # the number of measurements in one sampling period depends on the wait between serial reads
 # it appears the maximum number of bytes received is 1024
 # the sampling rate of the PPK2 is 100 samples per millisecond
 while True:
     read_data = ppk2_test.get_data()
-    if read_data != b'':
+    if read_data != b"":
         samples, raw_digital = ppk2_test.get_samples(read_data)
         print(f"Average of {len(samples)} samples is: {sum(samples)/len(samples)}uA")
 
@@ -50,18 +60,21 @@ while True:
 
     time.sleep(0.001)
 
-ppk2_test.toggle_DUT_power("OFF")  # disable DUT power
+
+# disable DUT power
+ppk2_test.toggle_DUT_power("OFF")
 ppk2_test.stop_measuring()
 
 """
 Ampere mode example
 """
-ppk2_test.use_ampere_meter()  # set ampere meter mode
+# set ampere meter mode
+ppk2_test.use_ampere_meter()
 
 ppk2_test.start_measuring()
 while True:
     read_data = ppk2_test.get_data()
-    if read_data != b'':
+    if read_data != b"":
         samples, raw_digital = ppk2_test.get_samples(read_data)
         print(f"Average of {len(samples)} samples is: {sum(samples)/len(samples)}uA")
 
@@ -73,6 +86,8 @@ while True:
             # Print last 10 values of each channel
             print(ch[-10:])
         print()
-    time.sleep(0.001)  # lower time between sampling -> less samples read in one sampling period
+
+    # lower time between sampling -> less samples read in one sampling period
+    time.sleep(0.001)
 
 ppk2_test.stop_measuring()
