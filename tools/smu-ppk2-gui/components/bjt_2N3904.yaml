@@ -1,0 +1,8 @@
+# components/bjt_2N3904.yaml
+description: "2N3904 NPN transistor"
+v1_typical: 0.7   # Vbe
+v2_typical: 5.0   # Vce
+sweep_v1: [0.0, 1.0, 50]
+sweep_v2: [0.0, 10.0, 50]
+pd_max: 0.625
+t_max: 150

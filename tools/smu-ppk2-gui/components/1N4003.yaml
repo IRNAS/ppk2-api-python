@@ -1,0 +1,6 @@
+# components/1N4003.yaml
+description: "1N4003 rectifier diode – 200 V, 1 A"
+v1_typical: 0.7
+sweep_v1: [0.0, 2.0, 100]
+pd_max: 1.0
+t_max: 175

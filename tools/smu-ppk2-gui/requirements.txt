@@ -1,0 +1,8 @@
+pyyaml
+matplotlib
+pillow
+ppk2-api-python
+requests
+w1thermsensor
+simple-spice  # opcjonalnie, ale używam ręcznego generowania
+cairosvg

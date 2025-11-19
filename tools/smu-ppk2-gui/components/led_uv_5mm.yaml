@@ -1,0 +1,6 @@
+# components/led_uv_5mm.yaml
+description: "UV LED 400 nm – 3.4 V, 20 mA"
+v1_typical: 3.4
+sweep_v1: [0.0, 4.5, 100]
+pd_max: 0.1
+t_max: 80

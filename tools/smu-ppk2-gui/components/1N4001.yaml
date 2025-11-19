@@ -1,0 +1,9 @@
+# components/1N4001.yaml
+description: "1N4001 rectifier diode – 50 V, 1 A"
+v1_typical: 0.7
+sweep_v1: [0.0, 2.0, 100]
+sweep_v2: [0.0, 0.0, 1]
+delay: 0.05
+pd_max: 1.0
+t_max: 175
+log_scale: false

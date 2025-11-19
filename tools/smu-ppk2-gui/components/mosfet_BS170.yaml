@@ -1,0 +1,8 @@
+# components/mosfet_BS170.yaml
+description: "BS170 N-channel MOSFET 60 V 500 mA"
+v1_typical: 2.5
+v2_typical: 20.0
+sweep_v1: [0.0, 5.0, 50]
+sweep_v2: [0.0, 60.0, 50]
+pd_max: 0.8
+t_max: 150

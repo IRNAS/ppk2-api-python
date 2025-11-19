@@ -1,0 +1,8 @@
+# components/bjt_BC557.yaml
+description: "BC557 PNP transistor"
+v1_typical: 0.7
+v2_typical: 5.0
+sweep_v1: [0.0, 1.0, 50]
+sweep_v2: [0.0, 45.0, 50]
+pd_max: 0.5
+t_max: 150

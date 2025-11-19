@@ -1,0 +1,7 @@
+# components/triac_BTA16.yaml
+description: "BTA16 triac 600 V 16 A"
+v1_typical: 0.0
+sweep_v1: [-500.0, 500.0, 200]
+delay: 0.3
+pd_max: 20
+t_max: 125

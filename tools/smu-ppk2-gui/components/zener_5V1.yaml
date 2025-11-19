@@ -1,0 +1,7 @@
+# components/zener_5V1.yaml
+description: "5.1 V Zener diode 500 mW"
+v1_typical: 0.0
+sweep_v1: [-10.0, 0.0, 100]
+pd_max: 0.5
+t_max: 150
+log_scale: true

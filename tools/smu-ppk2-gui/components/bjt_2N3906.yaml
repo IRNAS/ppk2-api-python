@@ -1,0 +1,8 @@
+# components/bjt_2N3906.yaml
+description: "2N3906 PNP transistor"
+v1_typical: 0.7
+v2_typical: 5.0
+sweep_v1: [0.0, 1.0, 50]
+sweep_v2: [0.0, 10.0, 50]
+pd_max: 0.625
+t_max: 150

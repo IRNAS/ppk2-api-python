@@ -1,40 +1,44 @@
-#!/usr/bin/env python
-# -*- encoding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import print_function
+import setuptools
 
-import io
-from glob import glob
-from os.path import basename
-from os.path import dirname
-from os.path import join
-from os.path import splitext
+# Use the README.md as the long description
+with open("README.md", "r", encoding="utf-8") as fh:
+	long_description = fh.read()
 
-from setuptools import find_packages
-from setuptools import setup
+# Define the core dependencies (pyserial is essential for PPK2 via UART)
+REQUIRED_PACKAGES = [
+	'pyserial>=3.4',
+	# Add any other core dependencies here if needed (e.g., numpy for data processing)
+]
 
+setuptools.setup(
+	# --- Metadata ---
+	name="ppk2-api",
+	version="0.1.0",  # Start with a reasonable version number
+	author="RolandWa",  # Replace with your name/alias
+	description="Unofficial Python API for Nordic Semiconductor Power Profiling Kit 2 (PPK2).",
+	long_description=long_description,
+	long_description_content_type="text/markdown",
+	url="https://github.com/RolandWa/ppk2-api-python",  # Replace with your correct GitHub URL
+	license="GPL-2.0-only",  # Explicitly state the license
 
-def read(*names, **kwargs):
-    with io.open(
-        join(dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")
-    ) as fh:
-        return fh.read()
+	# --- Package & Source Files ---
+	# Finds all packages in the 'src' directory
+	packages=setuptools.find_packages(where="src"),
+	package_dir={"": "src"},
 
+	# --- Dependencies and Compatibility ---
+	install_requires=REQUIRED_PACKAGES,
+	python_requires='>=3.6',  # Define minimum required Python version
 
-setup(
-    name="ppk2-api",
-    version="0.9.2",
-    description="API for Nordic Semiconductor's Power Profiler Kit II (PPK 2).",
-    url="https://github.com/IRNAS/ppk2-api-python",
-    packages=find_packages("src"),
-    package_dir={"": "src"},
-    py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
-    install_requires=[
-        "pyserial",
-    ],
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-        "Operating System :: OS Independent",
-    ],
+	# --- Classifiers (For PyPI) ---
+	classifiers=[
+		"Programming Language :: Python :: 3",
+		"Programming Language :: Python :: 3.6",
+		"Programming Language :: Python :: 3.7",
+		"Programming Language :: Python :: 3.8",
+		"Programming Language :: Python :: 3.9",
+		"License :: OSI Approved :: GNU General Public License v2 only (GPLv2 only)",
+		"Operating System :: OS Independent",
+		"Topic :: Scientific/Engineering :: Electronic"
+	],
 )

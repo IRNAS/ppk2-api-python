@@ -1,0 +1,6 @@
+# components/resistor_1k.yaml
+description: "1 kΩ resistor 0.25 W"
+v1_typical: 5.0
+sweep_v1: [0.0, 15.0, 100]
+pd_max: 0.25
+t_max: 155

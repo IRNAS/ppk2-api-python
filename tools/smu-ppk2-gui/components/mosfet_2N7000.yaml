@@ -1,0 +1,8 @@
+# components/mosfet_2N7000.yaml
+description: "2N7000 N-channel MOSFET 60 V 200 mA"
+v1_typical: 3.0
+v2_typical: 20.0
+sweep_v1: [0.0, 5.0, 50]
+sweep_v2: [0.0, 60.0, 50]
+pd_max: 0.4
+t_max: 150

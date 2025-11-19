@@ -1,0 +1,8 @@
+# components/bjt_TIP31.yaml
+description: "TIP31 NPN power transistor"
+v1_typical: 0.7
+v2_typical: 20.0
+sweep_v1: [0.0, 1.5, 50]
+sweep_v2: [0.0, 100.0, 50]
+pd_max: 40
+t_max: 150

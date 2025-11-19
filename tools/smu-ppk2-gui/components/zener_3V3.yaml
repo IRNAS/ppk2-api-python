@@ -1,0 +1,8 @@
+# components/zener_3V3.yaml
+description: "3.3 V Zener diode 500 mW"
+v1_typical: 0.0
+sweep_v1: [-6.0, 0.0, 100]
+delay: 0.2
+pd_max: 0.5
+t_max: 150
+log_scale: true

@@ -1,0 +1,8 @@
+# components/triac_BT136.yaml
+description: "BT136 triac 600 V 4 A"
+v1_typical: 0.0
+sweep_v1: [-400.0, 400.0, 200]
+delay: 0.3
+pd_max: 10
+t_max: 125
+log_scale: false

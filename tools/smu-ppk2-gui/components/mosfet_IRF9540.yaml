@@ -1,0 +1,8 @@
+# components/mosfet_IRF9540.yaml
+description: "IRF9540 P-channel MOSFET –100 V, 23 A"
+v1_typical: -4.0
+v2_typical: -10.0
+sweep_v1: [-10.0, 0.0, 100]
+sweep_v2: [-50.0, 0.0, 100]
+pd_max: 150
+t_max: 175

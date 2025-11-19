@@ -1,0 +1,6 @@
+# components/led_high_power_1W.yaml
+description: "1 W high-power LED – 3.3 V, 350 mA"
+v1_typical: 3.3
+sweep_v1: [0.0, 4.0, 100]
+pd_max: 1.0
+t_max: 100

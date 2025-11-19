@@ -1,0 +1,6 @@
+# components/1N5822.yaml
+description: "1N5822 Schottky diode 40 V 3 A"
+v1_typical: 0.45
+sweep_v1: [0.0, 1.0, 100]
+pd_max: 3.0
+t_max: 150

@@ -1,0 +1,6 @@
+# components/led_yellow_5mm.yaml
+description: "Standard yellow 5 mm LED – 2.1 V, 20 mA"
+v1_typical: 2.1
+sweep_v1: [0.0, 3.0, 100]
+pd_max: 0.1
+t_max: 85

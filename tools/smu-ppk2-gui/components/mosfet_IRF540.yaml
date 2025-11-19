@@ -1,0 +1,8 @@
+# components/mosfet_IRF540.yaml
+description: "IRF540 N-channel MOSFET 100 V 33 A"
+v1_typical: 4.0   # Vgs
+v2_typical: 10.0  # Vds
+sweep_v1: [0.0, 10.0, 100]
+sweep_v2: [0.0, 50.0, 100]
+pd_max: 150
+t_max: 175

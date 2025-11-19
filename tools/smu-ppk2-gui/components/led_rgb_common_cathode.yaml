@@ -1,0 +1,6 @@
+# components/led_rgb_common_cathode.yaml
+description: "RGB LED common cathode (test one color at a time)"
+v1_typical: 2.0
+sweep_v1: [0.0, 3.5, 100]
+pd_max: 0.1
+t_max: 85

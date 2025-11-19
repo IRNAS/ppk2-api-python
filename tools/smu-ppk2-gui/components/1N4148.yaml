@@ -1,0 +1,7 @@
+# components/1N4148.yaml
+description: "1N4148 fast switching diode"
+v1_typical: 0.7
+sweep_v1: [0.0, 1.5, 80]
+delay: 0.02
+pd_max: 0.5
+t_max: 175

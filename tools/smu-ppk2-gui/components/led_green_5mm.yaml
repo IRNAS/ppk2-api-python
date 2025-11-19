@@ -1,0 +1,6 @@
+# components/led_green_5mm.yaml
+description: "Standard green 5 mm LED – 2.2 V, 20 mA"
+v1_typical: 2.2
+sweep_v1: [0.0, 3.5, 100]
+pd_max: 0.1
+t_max: 85

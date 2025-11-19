@@ -1,0 +1,8 @@
+# components/bjt_2N2222.yaml
+description: "2N2222 NPN transistor"
+v1_typical: 0.7
+v2_typical: 10.0
+sweep_v1: [0.0, 1.2, 60]
+sweep_v2: [0.0, 40.0, 60]
+pd_max: 0.8
+t_max: 175

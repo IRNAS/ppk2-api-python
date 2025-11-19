@@ -1,0 +1,7 @@
+# components/cap_100nF.yaml
+description: "100 nF ceramic capacitor 50 V"
+v1_typical: 5.0
+sweep_v1: [0.0, 50.0, 100]
+delay: 0.5
+pd_max: 0.01
+log_scale: true

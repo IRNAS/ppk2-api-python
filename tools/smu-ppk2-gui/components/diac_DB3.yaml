@@ -1,0 +1,7 @@
+# components/diac_DB3.yaml
+description: "DB3 diac – Vbo ≈ 32 V"
+v1_typical: 0.0
+sweep_v1: [-40.0, 40.0, 160]
+delay: 0.2
+pd_max: 0.1
+t_max: 125

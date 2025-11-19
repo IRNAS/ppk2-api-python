@@ -1,0 +1,6 @@
+# components/led_blue_5mm.yaml
+description: "Standard blue 5 mm LED – 3.3 V, 20 mA"
+v1_typical: 3.3
+sweep_v1: [0.0, 4.0, 100]
+pd_max: 0.1
+t_max: 85
