@@ -167,26 +167,18 @@ class PPK2_API():
 
     def _read_metadata(self) -> str:
         """Read metadata"""
-        # try to get metadata from device
-        for _ in range(0, 5):
+        accumulated = ""
+        for _ in range(0, 10):
             read = self.ser.read(self.ser.in_waiting)
             time.sleep(0.1)
-
             if not read:
-                continue  # No data, try again
-
-            # Try decoding the data
-            try:
-                metadata = read.decode("utf-8")
-            except UnicodeDecodeError:
-                # If decoding fails, try again in next iteration
                 continue
-
-            # Check if the metadata is valid (i.e., contains "END")
-            if "END" in metadata:
-                return metadata
-
-        # If we exit the loop, it means we couldn't get valid metadata
+            try:
+                accumulated += read.decode("utf-8")
+            except UnicodeDecodeError:
+                continue
+            if "END" in accumulated:
+                return accumulated
         raise ValueError("Could not retrieve valid metadata from the device.")
 
     def _parse_metadata(self, metadata: str) -> None:
