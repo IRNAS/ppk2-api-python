@@ -391,44 +391,48 @@ class PPK2_API():
 
     def get_samples(self, buf: bytes) -> SampleBatch:
         """
-        Returns list of samples read in one sampling period.
-        The number of sampled values depends on the delay between serial reads.
-        Manipulation of samples is left to the user.
-        See example for more info.
-        """
+        Decode complete 4-byte PPK2 sample words from (leftover + new bytes).
 
+        The PPK2 streams 4-byte little-endian words, but ``ser.read(in_waiting)``
+        returns whatever the USB stack has buffered — any byte count, not
+        necessarily a multiple of 4 — so words straddle read boundaries. Bytes
+        that don't complete a word are carried into the next call via
+        ``self.remainder``. Manipulation of the returned samples is left to the
+        user; see the examples.
+
+        Fixes IRNAS/ppk2-api-python issue #7 (and the desync symptoms in #45/#53):
+        the previous implementation assumed every read could finish the pending
+        word. On a sub-word read it decoded a phantom sample from < 4 bytes and
+        set ``remainder["len"]`` NEGATIVE, permanently desyncing byte alignment
+        (garbage / multi-order-of-magnitude spikes forever after). This version
+        only ever decodes whole words and keeps the 0..3 trailing bytes, so the
+        remainder length is in 0..3 by construction. On well-aligned reads it is
+        byte-for-byte identical to the old behaviour.
+        """
         sample_size = 4  # one analog value is 4 bytes in size
-        offset = self.remainder["len"]
         samples = []
         raw_digital_output = []
 
-        first_reading = (
-            self.remainder["sequence"] + buf[0:sample_size-offset])[:4]
-        adc_val = self._digital_to_analog(first_reading)
-        measurement, bits = self._handle_raw_data(adc_val)
-        if measurement is not None:
-            samples.append(measurement)
-        if bits is not None:
-            raw_digital_output.append(bits)
+        data = self.remainder["sequence"] + buf   # leftover bytes + this read
+        n_complete = len(data) // sample_size      # only decode whole words
+        consumed = n_complete * sample_size
 
-        offset = sample_size - offset
-
-        while offset <= len(buf) - sample_size:
-            next_val = buf[offset:offset + sample_size]
-            offset += sample_size
-            adc_val = self._digital_to_analog(next_val)
+        for i in range(n_complete):
+            word = data[i * sample_size:(i + 1) * sample_size]
+            adc_val = self._digital_to_analog(word)
             measurement, bits = self._handle_raw_data(adc_val)
             if measurement is not None:
                 samples.append(measurement)
             if bits is not None:
                 raw_digital_output.append(bits)
 
-        self.remainder["sequence"] = buf[offset:len(buf)]
-        self.remainder["len"] = len(buf)-offset
+        # carry the 0..3 trailing bytes to the next call (never negative)
+        self.remainder["sequence"] = data[consumed:]
+        self.remainder["len"] = len(data) - consumed
 
         # return list of samples and raw digital outputs
         # handle those lists in PPK2 API wrapper
-        return samples, raw_digital_output  
+        return samples, raw_digital_output
 
 
 class PPK_Fetch(threading.Thread):

@@ -32,6 +32,9 @@ setup(
     install_requires=[
         "pyserial",
     ],
+    extras_require={
+        "test": ["pytest"],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
