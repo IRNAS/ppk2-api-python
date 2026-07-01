@@ -166,25 +166,37 @@ class PPK2_API():
         return set_b_1, set_b_2
 
     def _read_metadata(self) -> str:
-        """Read metadata"""
-        # try to get metadata from device
-        for _ in range(0, 5):
+        """Read metadata, accumulating chunks until the terminating 'END'.
+
+        Fixes IRNAS/ppk2-api-python issue #61: the PPK2 sends its calibration
+        metadata as a multi-line ASCII string ending in 'END', which the USB
+        serial driver may split across several reads (observed on macOS). The
+        previous version returned only the single chunk that contained 'END' and
+        discarded the earlier ones, so calibration fields that arrived first
+        (O, S, I, GS, GI, HW, ...) were silently dropped and left at their default
+        of 0 — adding a systematic low-range current offset (~1.8 uA) with no
+        error raised. Accumulating across reads keeps the full metadata intact.
+        """
+        # allow more iterations than a single-read stream needs, since a split
+        # stream can take several reads to deliver the whole thing.
+        accumulated = ""
+        for _ in range(0, 10):
             read = self.ser.read(self.ser.in_waiting)
             time.sleep(0.1)
 
             if not read:
-                continue  # No data, try again
+                continue  # No data yet, try again
 
-            # Try decoding the data
+            # Try decoding the data. Skip an undecodable chunk (e.g. residual
+            # bytes from a previous session) but keep what we've accumulated.
             try:
-                metadata = read.decode("utf-8")
+                accumulated += read.decode("utf-8")
             except UnicodeDecodeError:
-                # If decoding fails, try again in next iteration
                 continue
 
-            # Check if the metadata is valid (i.e., contains "END")
-            if "END" in metadata:
-                return metadata
+            # The full metadata is complete once we've seen the 'END' marker.
+            if "END" in accumulated:
+                return accumulated
 
         # If we exit the loop, it means we couldn't get valid metadata
         raise ValueError("Could not retrieve valid metadata from the device.")
